@@ -1,0 +1,60 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: API-GATEWAY
+  config:
+    import: configserver:http://localhost:9296
+  cloud:
+    gateway:
+      routes:
+        - id: ACCOUNT-SERVICE
+          uri: lb://ACCOUNT-SERVICE
+          predicates:
+            - Path=/account/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: ACCOUNT-SERVICE
+                fallbackuri: forward:/accountServiceFallBack
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 1
+                redis-rate-limiter.burstCapacity: 1
+        - id: EXPENSE-SERVICE
+          uri: lb://EXPENSE-SERVICE
+          predicates:
+            - Path=/expense/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: EXPENSE-SERVICE
+                fallbackuri: forward:/expenseServiceFallBack
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 1
+                redis-rate-limiter.burstCapacity: 1
+        - id: INCOME-SERVICE
+          uri: lb://INCOME-SERVICE
+          predicates:
+            - Path=/income/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: INCOME-SERVICE
+                fallbackuri: forward:/incomeServiceFallBack
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 1
+                redis-rate-limiter.burstCapacity: 1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  tracing:
+    sampling:
+      probability: 1.0
+
